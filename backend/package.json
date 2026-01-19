@@ -2,14 +2,26 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --loader ts-node/esm --no-warnings src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "author": "Kushaal Kankane",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
