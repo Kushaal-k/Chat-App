@@ -14,14 +14,19 @@ const io = new Server(httpServer, {
 })
 
 type Message = {
+    id: string,
     text: string,
-    sender: string
+    sender: string,
+    time: string,
+    status: string
 }
 
 
 let typingUsers = new Map<string, string[]>()
 const roomMessages = new Map<string, Message[]>()
 const users = new Map<string, string[]>()
+// Track which socket belongs to which user and room
+const socketUserMap = new Map<string, { username: string, roomId: string }>()
 
 io.on("connection", (socket) => {
     console.log("Connected: ", socket.id);
@@ -30,6 +35,9 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         console.log(username);
+
+        // Store socket-to-user mapping for disconnect handling
+        socketUserMap.set(socket.id, { username, roomId });
 
         const prev = users.get(roomId) ?? []
         users.set(roomId, [...prev, username])
@@ -45,15 +53,24 @@ io.on("connection", (socket) => {
 
     })
 
-    socket.on("room-messages", ({ roomId, msg }: { roomId: string, msg: Message }) => {
-        if (!socket.rooms.has(roomId)) {
-            console.log("You are not connected to the room");
-            return;
-        }
-        const prev = roomMessages.get(roomId) ?? [];
-        roomMessages.set(roomId, [...prev, msg])
+    socket.on("room-messages", ({ roomId, msg }: { roomId: string, msg: Message }, callback) => {
 
-        io.to(roomId).emit("room-messages", msg)
+        try {
+            if (!socket.rooms.has(roomId)) {
+                console.log("You are not connected to the room");
+                return;
+            }
+            const prev = roomMessages.get(roomId) ?? [];
+            roomMessages.set(roomId, [...prev, { ...msg, status: "Sent" }])
+
+            socket.to(roomId).emit("room-messages", { ...msg, status: "Sent" })
+
+            callback({ ok: true })
+        }
+        catch (error) {
+            callback({ ok: false })
+        }
+
     })
 
     socket.on("leave-room", ({ roomId, username }: { roomId: string, username: string }) => {
@@ -77,14 +94,14 @@ io.on("connection", (socket) => {
     })
 
     socket.on("user-type", ({ roomId, username }: { roomId: string, username: string }) => {
-        
+
         const prev = typingUsers.get(roomId) ?? []
-        if(!prev.includes(username)){
+        if (!prev.includes(username)) {
             prev.push(username)
             typingUsers.set(roomId, prev)
             socket.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? [])
         }
-        else{
+        else {
             const updated = prev.filter((u) => u !== username)
             typingUsers.set(roomId, updated)
             socket.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? [])
@@ -96,11 +113,36 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("Disconnected: ", socket.id);
 
-        users.forEach((value, key) => {
-            if (value.includes(socket.id)) {
-                users.delete(key);
+        // Get the user info from socket mapping
+        const userInfo = socketUserMap.get(socket.id);
+
+        if (userInfo) {
+            const { username, roomId } = userInfo;
+
+            // Remove user from room's user list
+            const roomUsers = users.get(roomId) ?? [];
+            const updatedUsers = roomUsers.filter(u => u !== username);
+
+            if (updatedUsers.length === 0) {
+                users.delete(roomId);
+            } else {
+                users.set(roomId, updatedUsers);
             }
-        })
+
+            // Remove from typing users
+            const roomTyping = typingUsers.get(roomId) ?? [];
+            typingUsers.set(roomId, roomTyping.filter(u => u !== username));
+
+            // Notify remaining users
+            io.to(roomId).emit("room-users", users.get(roomId) ?? []);
+            io.to(roomId).emit("left-user", username);
+            io.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? []);
+
+            // Clean up socket mapping
+            socketUserMap.delete(socket.id);
+
+            console.log(`${username} disconnected from ${roomId}`);
+        }
     })
 })
 

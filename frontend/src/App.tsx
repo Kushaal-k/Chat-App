@@ -4,6 +4,7 @@ import { socket } from "./socket.ts";
 import { Input } from "./components/ui/input.tsx";
 import { Button } from "./components/ui/button.tsx";
 import { Separator } from "./components/ui/separator.tsx";
+import { Clock, CheckCheck, X } from "lucide-react";
 
 //TODO: Leave room
 //TODO: Online users list 
@@ -13,8 +14,11 @@ import { Separator } from "./components/ui/separator.tsx";
 //TODO: Private messages
 
 type Message = {
+	id: string
 	text: string;
 	sender: string;
+	time: string;
+	status: "Pending" | 'Sent' | 'Failed';
 };
 
 function App() {
@@ -27,14 +31,14 @@ function App() {
 
 
 	const joinRoom = () => {
-		if(!name.trim()) return;
-		if(!roomId.trim()) return;
+		if (!name.trim()) return;
+		if (!roomId.trim()) return;
 		setJoinedRoomId(roomId)
 
 		// socket.emit("join-room", roomId, name)
-		socket.emit("join-room", {roomId, username: name})
+		socket.emit("join-room", { roomId, username: name })
 		console.log("Joined Room: ", roomId);
-		
+
 		setMessages([])
 	}
 
@@ -42,23 +46,36 @@ function App() {
 		if (!text.trim()) return;
 		if (!roomId.trim()) return;
 
-		const msg: Message = { text, sender: name || "anonymus"};	
-    
-		socket.emit("room-messages", {roomId: joinedRoomId, msg})
+		const msg: Message = {
+			id: crypto.randomUUID(),
+			text,
+			sender: name || "anonymus",
+			time: (new Date().toISOString()),
+			status: "Pending"
+		};
+
+		setMessages((prev) => [...prev, msg])
+
+		socket.emit("room-messages", { roomId: joinedRoomId, msg }, (ack: any) => {
+			setMessages((prev) =>
+				prev.map((message) => message.id === msg.id ? { ...message, status: ack.ok ? "Sent" : "Failed" } : message)
+			)
+		})
 	};
 
 	const typing = () => {
-		socket.emit("user-type", {roomId: joinedRoomId, username: name})
+		socket.emit("user-type", { roomId: joinedRoomId, username: name })
 	}
 
 	const leaveRoom = () => {
-		socket.emit("leave-room", {roomId: joinedRoomId, username: name})
-		setMessages([{text: "You left the room", sender: ""}])
+		socket.emit("leave-room", { roomId: joinedRoomId, username: name })
+		const date = new Date().toISOString()
+		setMessages([{ id: crypto.randomUUID(), text: "You left the room", sender: "", time: `${date}`, status: "Sent" }])
 		setRoomId("")
 		setOnlineUser([]);
 	}
 
-    useEffect(() => {
+	useEffect(() => {
 		socket.on("connect", () => {
 			console.log("Socket is connected");
 		});
@@ -72,22 +89,24 @@ function App() {
 		})
 
 		socket.on("room-messages", (msg: Message) => {
-			setMessages((prev) => [...prev, msg])
+			setMessages((prev) => {
+				if (prev.some(m => m.id == msg.id)) return prev;
+				return [...prev, msg];
+			})
 		})
 
 		socket.on("joined-user", (username: string) => {
-			setMessages((prev) => [...prev, {text: `${username || "anonymous"} joined the room`, sender: ""}])
+			setMessages((prev) => [...prev, { id: crypto.randomUUID(), text: `${username || "anonymous"} joined the room`, sender: "", time: "", status: "Sent" }])
 		})
 
 		socket.on("left-user", (username: string) => {
-			setMessages((prev) => [...prev, {text: `${username} left the room`, sender: ""}])
+			setMessages((prev) => [...prev, { id: crypto.randomUUID(), text: `${username} left the room`, sender: "", time: "", status: "Sent" }])
 		})
 
 		socket.on("typing-user", (typeUser: string[]) => {
 			setTypingUser(typeUser);
-			const temp = typeUser.filter((x) => x !== "").join(",");
 		})
-		
+
 		return () => {
 			socket.off("connect")
 			socket.off("room-history")
@@ -97,7 +116,7 @@ function App() {
 			socket.off("room-users")
 			socket.off("typing-user")
 		}
-    }, []);
+	}, []);
 
 	return (
 		<>
@@ -135,15 +154,44 @@ function App() {
 				{messages.map((message, index) => (
 					<div
 						key={index}
-						className={` rounded-xl px-4 py-2 w-fit ${(message.sender === name) ? "self-end" : ""} ${(!message.sender) ? "self-center bg-gray-200" : "bg-green-500"}`}
+						className={`flex flex-col w-fit max-w-xs ${message.sender === name ? "self-end items-end" : ""} ${!message.sender ? "self-center" : ""}`}
 					>
-						{message.sender ? `${message.text} - ${message.sender}` : `${message.text.toUpperCase()}`}
 						
+						{message.sender && (
+							<div className="text-xs text-gray-500 mb-1 px-1">
+								{message.sender}
+							</div>
+						)}
+
+						
+						<div className={`rounded-xl px-4 py-2 ${!message.sender ? "bg-gray-200 text-xs text-center" : message.sender === name ? "bg-green-500 text-white" : "bg-gray-300"}`}>
+							
+							<div className="text-sm">
+								{message.sender ? message.text : message.text.toUpperCase()}
+							</div>
+
+							
+							{message.sender && (
+								<div className="flex items-center justify-end gap-2 mt-1">
+									<span className="text-xs opacity-70">
+										{message.time
+											? new Date(message.time).toLocaleTimeString([], {
+												hour: "2-digit",
+												minute: "2-digit",
+												hour12: false
+											}) : ""}
+									</span>
+									{message.status === "Pending" && <span className="text-xs opacity-70"><Clock size={16}/></span>}
+									{message.status === "Sent" && <span className="text-xs opacity-70"><CheckCheck size={16}/></span>}
+									{message.status === "Failed" && <span className="text-xs text-red-600"><X size={16}/></span>}
+								</div>
+							)}
+						</div>
 					</div>
 				))}
-				<div className=" mt-auto">
+				<div className="mt-auto">
 					<div className="pl-2  rounded-xl w-80">
-						{typingUser.length > 0 ? `${typingUser.filter((x) => (x!=="" && x !== name)).join(",")} is typing...`: ""} 
+						{typingUser.length > 0 ? `${typingUser.filter((x) => (x !== "" && x !== name)).join(",")} is typing...` : ""}
 					</div>
 					<MessageInput onSend={sendMessage} disabled={!joinedRoomId.trim()} onFocus={typing} />
 				</div>
