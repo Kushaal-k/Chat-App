@@ -1,7 +1,7 @@
-import  express, { type Response, type Request } from "express"
-import  {createServer} from "http"
-import  { Server } from "socket.io"
-import  cors from "cors"
+import express, { type Response, type Request } from "express"
+import { createServer } from "http"
+import { Server } from "socket.io"
+import cors from "cors"
 
 const app = express()
 app.use(express.json())
@@ -19,16 +19,16 @@ type Message = {
 }
 
 
-let messages: Message[] = []
+let typingUsers = new Map<string, string[]>()
 const roomMessages = new Map<string, Message[]>()
 const users = new Map<string, string[]>()
 
 io.on("connection", (socket) => {
     console.log("Connected: ", socket.id);
-    
-    socket.on("join-room", ({roomId, username}: {roomId: string, username: string}) => {
+
+    socket.on("join-room", ({ roomId, username }: { roomId: string, username: string }) => {
         socket.join(roomId);
-        
+
         console.log(username);
 
         const prev = users.get(roomId) ?? []
@@ -45,8 +45,8 @@ io.on("connection", (socket) => {
 
     })
 
-    socket.on("room-messages", ({roomId, msg}: {roomId: string, msg: Message}) => {
-        if(!socket.rooms.has(roomId)) {
+    socket.on("room-messages", ({ roomId, msg }: { roomId: string, msg: Message }) => {
+        if (!socket.rooms.has(roomId)) {
             console.log("You are not connected to the room");
             return;
         }
@@ -56,16 +56,16 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("room-messages", msg)
     })
 
-    socket.on("leave-room", ({roomId, username}: {roomId: string, username: string}) => {
+    socket.on("leave-room", ({ roomId, username }: { roomId: string, username: string }) => {
         socket.leave(roomId);
-        
+
         const prev = users.get(roomId) ?? [];
         const updated = prev.filter((u) => u !== username)
 
-        if(updated.length === 0){
+        if (updated.length === 0) {
             users.delete(roomId);
         }
-        else{
+        else {
             users.set(roomId, updated)
         }
 
@@ -76,11 +76,28 @@ io.on("connection", (socket) => {
         console.log(`${username} left ${roomId}`);
     })
 
+    socket.on("user-type", ({ roomId, username }: { roomId: string, username: string }) => {
+        
+        const prev = typingUsers.get(roomId) ?? []
+        if(!prev.includes(username)){
+            prev.push(username)
+            typingUsers.set(roomId, prev)
+            socket.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? [])
+        }
+        else{
+            const updated = prev.filter((u) => u !== username)
+            typingUsers.set(roomId, updated)
+            socket.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? [])
+        }
+    })
+
+
+
     socket.on("disconnect", () => {
         console.log("Disconnected: ", socket.id);
 
         users.forEach((value, key) => {
-            if(value.includes(socket.id)){
+            if (value.includes(socket.id)) {
                 users.delete(key);
             }
         })

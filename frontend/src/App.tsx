@@ -23,6 +23,7 @@ function App() {
 	const [roomId, setRoomId] = useState<string>("");
 	const [joinedRoomId, setJoinedRoomId] = useState<string>("");
 	const [onlineUser, setOnlineUser] = useState<string[]>([])
+	const [typingUser, setTypingUser] = useState<string[]>([])
 
 
 	const joinRoom = () => {
@@ -45,6 +46,10 @@ function App() {
     
 		socket.emit("room-messages", {roomId: joinedRoomId, msg})
 	};
+
+	const typing = () => {
+		socket.emit("user-type", {roomId: joinedRoomId, username: name})
+	}
 
 	const leaveRoom = () => {
 		socket.emit("leave-room", {roomId: joinedRoomId, username: name})
@@ -78,15 +83,21 @@ function App() {
 			setMessages((prev) => [...prev, {text: `${username} left the room`, sender: ""}])
 		})
 
+		socket.on("typing-user", (typeUser: string[]) => {
+			setTypingUser(typeUser);
+			const temp = typeUser.filter((x) => x !== "").join(",");
+		})
+		
 		return () => {
-			socket.off("connect");
+			socket.off("connect")
 			socket.off("room-history")
 			socket.off("room-messages")
 			socket.off("joined-user")
 			socket.off("left-user")
 			socket.off("room-users")
+			socket.off("typing-user")
 		}
-    }, [roomId]);
+    }, []);
 
 	return (
 		<>
@@ -111,15 +122,14 @@ function App() {
 			</div>
 			<Button onClick={joinRoom} className="mx-4 my-4">Join</Button>
 			<Button onClick={leaveRoom} className="mx-4 my-4">Leave</Button>
-			<MessageInput onSend={sendMessage} disabled={!roomId.trim()}/>
-			<div className="m-4 border border-black rounded-xl p-4 flex flex-col gap-4">
+			<div className="m-2 border border-black rounded-xl p-4 flex flex-col gap-4">
 				<div className="font-bold">Online Users </div>
 				{onlineUser.map((user, index) => (
 					<div key={index} className="flex items-center gap-2">
 						<div className="rounded-full bg-green-400 h-2 w-2"></div>{user}</div>
 				))}
 			</div>
-			<div className="border h-full mx-2 border-black mt- flex flex-col gap-4 p-4 rounded-xl">
+			<div className="border mx-2 border-black  flex flex-col gap-4 p-4 rounded-xl h-96 overflow-y-auto">
 				<div className="self-center text-2xl font-bold">CHAT APP</div>
 				<Separator />
 				{messages.map((message, index) => (
@@ -131,6 +141,12 @@ function App() {
 						
 					</div>
 				))}
+				<div className=" mt-auto">
+					<div className="pl-2  rounded-xl w-80">
+						{typingUser.length > 0 ? `${typingUser.filter((x) => (x!=="" && x !== name)).join(",")} is typing...`: ""} 
+					</div>
+					<MessageInput onSend={sendMessage} disabled={!joinedRoomId.trim()} onFocus={typing} />
+				</div>
 			</div>
 		</>
 	);
