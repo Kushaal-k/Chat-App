@@ -181,9 +181,15 @@ function App() {
 												hour12: false
 											}) : ""}
 									</span>
-									{message.status === "Pending" && <span className="text-xs opacity-70"><Clock size={16}/></span>}
-									{message.status === "Sent" && <span className="text-xs opacity-70"><CheckCheck size={16}/></span>}
-									{message.status === "Failed" && <span className="text-xs text-red-600"><X size={16}/></span>}
+									{message.sender === name &&
+										(	
+											<>
+												{message.status === "Pending" && <span className="text-xs opacity-70"><Clock size={16}/></span>}
+												{message.status === "Sent" && <span className="text-xs opacity-70"><CheckCheck size={16}/></span>}
+												{message.status === "Failed" && <span className="text-xs text-red-600"><X size={16}/></span>}
+											</>
+										)
+									}	
 								</div>
 							)}
 						</div>

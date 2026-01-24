@@ -25,7 +25,6 @@ type Message = {
 let typingUsers = new Map<string, string[]>()
 const roomMessages = new Map<string, Message[]>()
 const users = new Map<string, string[]>()
-// Track which socket belongs to which user and room
 const socketUserMap = new Map<string, { username: string, roomId: string }>()
 
 io.on("connection", (socket) => {
@@ -36,7 +35,6 @@ io.on("connection", (socket) => {
 
         console.log(username);
 
-        // Store socket-to-user mapping for disconnect handling
         socketUserMap.set(socket.id, { username, roomId });
 
         const prev = users.get(roomId) ?? []
@@ -113,13 +111,11 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("Disconnected: ", socket.id);
 
-        // Get the user info from socket mapping
         const userInfo = socketUserMap.get(socket.id);
 
         if (userInfo) {
             const { username, roomId } = userInfo;
 
-            // Remove user from room's user list
             const roomUsers = users.get(roomId) ?? [];
             const updatedUsers = roomUsers.filter(u => u !== username);
 
@@ -129,16 +125,13 @@ io.on("connection", (socket) => {
                 users.set(roomId, updatedUsers);
             }
 
-            // Remove from typing users
             const roomTyping = typingUsers.get(roomId) ?? [];
             typingUsers.set(roomId, roomTyping.filter(u => u !== username));
 
-            // Notify remaining users
             io.to(roomId).emit("room-users", users.get(roomId) ?? []);
             io.to(roomId).emit("left-user", username);
             io.to(roomId).emit("typing-user", typingUsers.get(roomId) ?? []);
 
-            // Clean up socket mapping
             socketUserMap.delete(socket.id);
 
             console.log(`${username} disconnected from ${roomId}`);
