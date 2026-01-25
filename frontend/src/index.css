@@ -117,14 +117,17 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 ::-webkit-scrollbar {
-  width: 10px;          /* vertical */
-  height: 10px;         /* horizontal */
+  width: 10px;
+  /* vertical */
+  height: 10px;
+  /* horizontal */
 }
 
 ::-webkit-scrollbar-track {
@@ -134,15 +137,17 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2); /* green */
+  background: rgba(0, 0, 0, 0.2);
+  /* green */
   border-radius: 999px;
   /* border: 3px solid transparent;       /*  ` `   
   +-makes thumb smaller */
-  background-clip: padding-box;         /* keeps border effect */
+  background-clip: padding-box;
+  /* keeps border effect */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   border: 2px solid transparent;
   background-clip: padding-box;
 }

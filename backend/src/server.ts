@@ -139,6 +139,10 @@ io.on("connection", (socket) => {
     })
 })
 
+import userRouter from "./routes/user.routes.js"
+
+app.use('/users', userRouter)
+
 httpServer.listen(3000, () => {
     console.log("Server running at port 3000");
 });
