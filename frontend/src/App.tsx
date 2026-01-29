@@ -31,22 +31,6 @@ function App() {
 	const [onlineUser, setOnlineUser] = useState<string[]>([])
 	const [typingUser, setTypingUser] = useState<string[]>([])
 
-	const loginUser = async (name: string, password: string) => {
-		const res = await api.post("/login", {
-			name, password
-		})
-
-		return res.data;
-	}
-
-	const registerUser = async (name: string, password: string) => {
-		const res = await api.post("/register", {
-			name, password
-		})
-
-		return res.data
-	}
-
 	const joinRoom = (roomId: string) => {
 		if (!name.trim()) return;
 		if (!roomId.trim()) return;
@@ -97,6 +81,14 @@ function App() {
 			console.log("Socket is connected");
 		});
 
+		const storedData = localStorage.getItem('user')
+
+		if(storedData){
+			const user = JSON.parse(storedData);
+			setName(user.username)
+			setPassword(user.password)
+		}
+
 		socket.on("room-users", (onlineUser: string[]) => {
 			setOnlineUser(onlineUser)
 		})
@@ -137,7 +129,7 @@ function App() {
 
 	return (
 		<>
-			<div className='flex items-center ml-4'>
+			{/* <div className='flex items-center ml-4'>
 				<p>Name: </p>
 				<Input
 					className='m-4 w-fit'
@@ -146,7 +138,7 @@ function App() {
 				/>
 			</div>
 			<div className='flex items-center ml-4'>
-				<p>Room ID: </p>
+				<p>Password: </p>
 				<Input
 					className='m-4 w-fit'
 					onChange={(e) => {
@@ -157,6 +149,26 @@ function App() {
 				/>
 			</div>
 			<Button onClick={() => registerUser(name, password)} className="mx-4 my-4">Register</Button>
+			<div className='flex items-center ml-4'>
+				<p>Name: </p>
+				<Input
+					className='m-4 w-fit'
+					onChange={(e) => setName(e.target.value)}
+					value={name}
+				/>
+			</div>
+			<div className='flex items-center ml-4'>
+				<p>Password: </p>
+				<Input
+					className='m-4 w-fit'
+					onChange={(e) => {
+						setPassword(e.target.value)
+					}}
+					type="password"
+					value={password}
+				/>
+			</div>
+			<Button onClick={() => loginUser(name, password)} className="mx-4 my-4">Login</Button> */}
 			<Button onClick={leaveRoom} className="mx-4 my-4">Leave</Button>
 			<div className="m-2 border border-black rounded-xl p-4 flex flex-col gap-4">
 				<div className="font-bold">Online Users </div>
@@ -168,7 +180,7 @@ function App() {
 			<div className="border mx-2 border-black flex  gap-4 p-4 rounded-xl h-96 overflow-y-auto">
 				<div className="text-sm w-lg flex flex-col gap-4">
 
-					<div>Global Rooms</div>
+					<div className="text-lg">Global Rooms</div>
 					<Separator />
 					<div onClick={() => joinRoom("Room1")} className="cursor-pointer">Room1</div>
 					<div>Room2</div>
@@ -176,7 +188,7 @@ function App() {
 
 					<Separator />
 
-					<div>Private Messaging</div>
+					<div className="text-lg">Private Messaging</div>
 					<Separator />
 					<div>Room1</div>
 					<div>Room2</div>

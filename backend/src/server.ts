@@ -2,10 +2,24 @@ import express, { type Response, type Request } from "express"
 import { createServer } from "http"
 import { Server } from "socket.io"
 import cors from "cors"
+import mongoose from "mongoose"
+import dotenv from "dotenv"
+
+dotenv.config()
+
 
 const app = express()
+
+app.use(cors({
+    origin: true,
+    credentials: true
+}))
+
+await mongoose.connect(`${process.env.MONGODB_URI}`)
+
 app.use(express.json())
-const httpServer = createServer(app)
+const httpServer = createServer(app);
+app.use(express.urlencoded({ extended: true }));
 
 const io = new Server(httpServer, {
     cors: {
