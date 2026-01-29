@@ -51,7 +51,29 @@ const loginUser = async (req: Request, res: Response) => {
     .json({ message: "User logged in successfully", user})
 }
 
+const getAllUser = async (req: Request, res: Response) => {
+
+    try {
+        const users = await User.find().select("-password")
+
+        res.status(200).json({
+            success: true,
+            count: users.length,
+            users
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch users"
+        })
+    }
+    
+
+
+}
+
 export {
     registerUser,
-    loginUser
+    loginUser,
+    getAllUser
 }

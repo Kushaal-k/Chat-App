@@ -38,7 +38,7 @@ export function LoginForm({
 			const res = await api.post("/users/login", data)
 
 			console.log("User logged in successfully");
-      localStorage.setItem('user', JSON.stringify(res.data.user))
+			localStorage.setItem('user', JSON.stringify(res.data.user))
 			navigate("/")
 			return res.data;
 		}

@@ -1,10 +1,17 @@
 import MessageInput from "./components/MessageInput";
 import { useEffect, useState } from "react";
 import { socket } from "./socket.ts";
-import { Input } from "./components/ui/input.tsx";
 import { Button } from "./components/ui/button.tsx";
 import { Separator } from "./components/ui/separator.tsx";
 import { Clock, CheckCheck, X } from "lucide-react";
+import {
+	Combobox,
+	ComboboxContent,
+	ComboboxEmpty,
+	ComboboxInput,
+	ComboboxItem,
+	ComboboxList,
+} from "@/components/ui/combobox"
 import api from "./lib/userApi.ts";
 
 //TODO: Leave room - Done
@@ -25,15 +32,18 @@ type Message = {
 function App() {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [name, setName] = useState<string>("");
-	const [password, setPassword] = useState<string>("")
 	const [roomId, setRoomId] = useState<string>("");
 	const [joinedRoomId, setJoinedRoomId] = useState<string>("");
 	const [onlineUser, setOnlineUser] = useState<string[]>([])
 	const [typingUser, setTypingUser] = useState<string[]>([])
+	const [users, setUsers] = useState<string[]>([]);
 
 	const joinRoom = (roomId: string) => {
 		if (!name.trim()) return;
 		if (!roomId.trim()) return;
+		if (joinedRoomId) {
+			leaveRoom()
+		}
 		setJoinedRoomId(roomId)
 
 		// socket.emit("join-room", roomId, name)
@@ -45,7 +55,7 @@ function App() {
 
 	const sendMessage = (text: string) => {
 		if (!text.trim()) return;
-		if (!roomId.trim()) return;
+		if (!joinedRoomId.trim()) return;
 
 		const msg: Message = {
 			id: crypto.randomUUID(),
@@ -76,6 +86,40 @@ function App() {
 		setOnlineUser([]);
 	}
 
+	const getUsers = async () => {
+		try {
+			const res = await api.get("/users")
+
+			console.log("Fetched all users successfully");
+
+			const usernames = res.data.users
+				.map((user: { username: string }) => user.username)
+				.filter((username: string) => username !== name);
+			setUsers(usernames)
+			return res.data;
+		} catch (error) {
+			console.log("Failed to fetch all users!");
+		}
+	}
+
+	// Create a private room when user is selected from combobox
+	const startPrivateChat = (selectedUser: string | null) => {
+		if (!selectedUser || !name) return;
+
+		// Create a consistent room ID by sorting usernames alphabetically
+		const participants = [name, selectedUser].sort();
+		const privateRoomId = `dm_${participants[0]}_${participants[1]}`;
+
+		joinRoom(privateRoomId);
+	}
+
+	// Fetch users when name changes (to properly filter out current user)
+	useEffect(() => {
+		if (name) {
+			getUsers();
+		}
+	}, [name]);
+
 	useEffect(() => {
 		socket.on("connect", () => {
 			console.log("Socket is connected");
@@ -83,10 +127,9 @@ function App() {
 
 		const storedData = localStorage.getItem('user')
 
-		if(storedData){
+		if (storedData) {
 			const user = JSON.parse(storedData);
-			setName(user.username)
-			setPassword(user.password)
+			setName((user.username as string))
 		}
 
 		socket.on("room-users", (onlineUser: string[]) => {
@@ -169,6 +212,19 @@ function App() {
 				/>
 			</div>
 			<Button onClick={() => loginUser(name, password)} className="mx-4 my-4">Login</Button> */}
+			<Combobox items={users} onValueChange={(value) => startPrivateChat(value)}>
+				<ComboboxInput placeholder="Start private chat..." />
+				<ComboboxContent>
+					<ComboboxEmpty>No users found.</ComboboxEmpty>
+					<ComboboxList >
+						{(item) => (
+							<ComboboxItem key={item} value={item}>
+								{item}
+							</ComboboxItem>
+						)}
+					</ComboboxList>
+				</ComboboxContent>
+			</Combobox>
 			<Button onClick={leaveRoom} className="mx-4 my-4">Leave</Button>
 			<div className="m-2 border border-black rounded-xl p-4 flex flex-col gap-4">
 				<div className="font-bold">Online Users </div>
@@ -183,8 +239,8 @@ function App() {
 					<div className="text-lg">Global Rooms</div>
 					<Separator />
 					<div onClick={() => joinRoom("Room1")} className="cursor-pointer">Room1</div>
-					<div>Room2</div>
-					<div>Room3</div>
+					<div onClick={() => joinRoom("Room2")} className="cursor-pointer">Room2</div>
+					<div onClick={() => joinRoom("Room3")} className="cursor-pointer">Room3</div>
 
 					<Separator />
 
@@ -197,59 +253,63 @@ function App() {
 				<div>
 					<Separator orientation="vertical" />
 				</div>
-				<div className="w-full ">
-					<div className="self-center text-2xl font-bold ">CHAT APP</div>
-					<Separator />
-					{messages.map((message, index) => (
-						<div
-							key={index}
-							className={`flex flex-col w-fit max-w-xs ${message.sender === name ? "self-end items-end" : ""} ${!message.sender ? "self-center" : ""}`}
-						>
-
-							{message.sender && (
-								<div className="text-xs text-gray-500 mb-1 px-1">
-									{message.sender}
-								</div>
-							)}
-
-
-							<div className={`rounded-xl px-4 py-2 ${!message.sender ? "bg-gray-200 text-xs text-center" : message.sender === name ? "bg-green-500 text-white" : "bg-gray-300"}`}>
-
-								<div className="text-sm">
-									{message.sender ? message.text : message.text.toUpperCase()}
-								</div>
-
+				<div className="w-full flex flex-col">
+					<div className="w-full ">
+						<div className="text-2xl font-bold justify-self-center">CHAT APP</div>
+						<Separator />
+						{messages.map((message, index) => (
+							<div
+								key={index}
+								className={`flex flex-col w-fit max-w-xs gap-4 mt-4 ${message.sender === name ? "justify-self-end items-end" : ""} ${!message.sender ? "justify-self-center" : ""}`}
+							>
 
 								{message.sender && (
-									<div className="flex items-center justify-end gap-2 mt-1">
-										<span className="text-xs opacity-70">
-											{message.time
-												? new Date(message.time).toLocaleTimeString([], {
-													hour: "2-digit",
-													minute: "2-digit",
-													hour12: false
-												}) : ""}
-										</span>
-										{message.sender === name &&
-											(
-												<>
-													{message.status === "Pending" && <span className="text-xs opacity-70"><Clock size={16} /></span>}
-													{message.status === "Sent" && <span className="text-xs opacity-70"><CheckCheck size={16} /></span>}
-													{message.status === "Failed" && <span className="text-xs text-red-600"><X size={16} /></span>}
-												</>
-											)
-										}
+									<div className="text-xs text-gray-500 mb-1 px-1">
+										{message.sender}
 									</div>
 								)}
+
+
+								<div className={`rounded-xl px-4 py-2 ${!message.sender ? "bg-gray-200 text-xs text-center" : message.sender === name ? "bg-green-500 text-white" : "bg-gray-300"}`}>
+
+									<div className="text-sm">
+										{message.sender ? message.text : message.text.toUpperCase()}
+									</div>
+
+
+									{message.sender && (
+										<div className="flex items-center justify-end gap-2 mt-1">
+											<span className="text-xs opacity-70">
+												{message.time
+													? new Date(message.time).toLocaleTimeString([], {
+														hour: "2-digit",
+														minute: "2-digit",
+														hour12: false
+													}) : ""}
+											</span>
+											{message.sender === name &&
+												(
+													<>
+														{message.status === "Pending" && <span className="text-xs opacity-70"><Clock size={16} /></span>}
+														{message.status === "Sent" && <span className="text-xs opacity-70"><CheckCheck size={16} /></span>}
+														{message.status === "Failed" && <span className="text-xs text-red-600"><X size={16} /></span>}
+													</>
+												)
+											}
+										</div>
+									)}
+								</div>
 							</div>
-						</div>
-					))}
-				</div>
-				<div className="mt-auto">
-					<div className="pl-2  rounded-xl w-80">
-						{typingUser.length > 0 ? `${typingUser.filter((x) => (x !== "" && x !== name)).join(",")} is typing...` : ""}
+						))}
 					</div>
-					<MessageInput onSend={sendMessage} disabled={!joinedRoomId.trim()} onFocus={typing} />
+					<div className="mt-auto">
+						<div className="pl-2  rounded-xl w-80">
+							{typingUser.length > 0 ? `${typingUser.filter((x) => (x !== "" && x !== name)).join(",")} is typing...` : ""}
+						</div>
+						<div className="">
+							<MessageInput onSend={sendMessage} disabled={!joinedRoomId.trim()} onFocus={typing} />
+						</div>
+					</div>
 				</div>
 			</div>
 		</>
