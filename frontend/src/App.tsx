@@ -1,5 +1,5 @@
 import MessageInput from "./components/MessageInput";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { socket } from "./socket.ts";
 import { Button } from "./components/ui/button.tsx";
 import { Separator } from "./components/ui/separator.tsx";
@@ -13,6 +13,7 @@ import {
 	ComboboxList,
 } from "@/components/ui/combobox"
 import api from "./lib/userApi.ts";
+import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 
 //TODO: Leave room - Done
 //TODO: Online users list - Done
@@ -37,6 +38,10 @@ function App() {
 	const [onlineUser, setOnlineUser] = useState<string[]>([])
 	const [typingUser, setTypingUser] = useState<string[]>([])
 	const [users, setUsers] = useState<string[]>([]);
+
+	
+	const messageEndRef = useRef<HTMLDivElement>(null);
+
 
 	const joinRoom = (roomId: string) => {
 		if (!name.trim()) return;
@@ -119,6 +124,10 @@ function App() {
 			getUsers();
 		}
 	}, [name]);
+
+	useEffect(() => {
+		messageEndRef.current?.scrollIntoView({ behavior: "smooth"});
+	}, [messages, typingUser])
 
 	useEffect(() => {
 		socket.on("connect", () => {
@@ -212,7 +221,7 @@ function App() {
 				/>
 			</div>
 			<Button onClick={() => loginUser(name, password)} className="mx-4 my-4">Login</Button> */}
-			<Combobox items={users} onValueChange={(value) => startPrivateChat(value)}>
+			<Combobox<string> items={users} onValueChange={(value) => startPrivateChat(value)}>
 				<ComboboxInput placeholder="Start private chat..." />
 				<ComboboxContent>
 					<ComboboxEmpty>No users found.</ComboboxEmpty>
@@ -251,16 +260,17 @@ function App() {
 					<div>Room3</div>
 				</div>
 				<div>
-					<Separator orientation="vertical" />
+					<Separator orientation="vertical" className="h-full"/>
 				</div>
+				<ScrollArea className="w-full p-4 rounded-md scroll-auto scroll-auto">
 				<div className="w-full flex flex-col">
-					<div className="w-full ">
+					<div className="w-full mb-2">
 						<div className="text-2xl font-bold justify-self-center">CHAT APP</div>
 						<Separator />
 						{messages.map((message, index) => (
 							<div
 								key={index}
-								className={`flex flex-col w-fit max-w-xs gap-4 mt-4 ${message.sender === name ? "justify-self-end items-end" : ""} ${!message.sender ? "justify-self-center" : ""}`}
+								className={`flex flex-col w-fit max-w-xs mt-4 ${message.sender === name ? "justify-self-end items-end" : ""} ${!message.sender ? "justify-self-center" : ""}`}
 							>
 
 								{message.sender && (
@@ -301,6 +311,7 @@ function App() {
 								</div>
 							</div>
 						))}
+						
 					</div>
 					<div className="mt-auto">
 						<div className="pl-2  rounded-xl w-80">
@@ -311,6 +322,8 @@ function App() {
 						</div>
 					</div>
 				</div>
+				<div ref={messageEndRef} /> 
+				</ScrollArea>
 			</div>
 		</>
 	);

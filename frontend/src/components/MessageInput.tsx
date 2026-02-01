@@ -17,9 +17,9 @@ function MessageInput({ onSend, disabled, onFocus }: { onSend: (text: string) =>
         setMessage("")
     }
     return (
-        <div className='flex gap-1 w-full border-gray-400'>
+        <div className='flex gap-1 w-full'>
             <Input 
-                className='border border-black ' 
+                className='border border-black m-2' 
                 placeholder='Type a message...' 
                 value={message} 
                 onChange={(e) => setMessage(e.target.value)} 
@@ -28,7 +28,7 @@ function MessageInput({ onSend, disabled, onFocus }: { onSend: (text: string) =>
                 onBlur={onFocus} 
                 onKeyDown={handleEnterKey} 
             />
-            <Button className='ml-1' onClick={handleSubmit} >SEND</Button>
+            <Button className='m-2 ml-0 w-32 ' onClick={handleSubmit} >SEND</Button>
         </div>
     );
 }
