@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/userApi";
+import { useDispatch } from "react-redux";
+import {login} from "../store/userSlice.ts";
 
 type data = {
 	username: string;
@@ -31,16 +33,23 @@ export function LoginForm({
 	const [password, setPassword] = useState<string>("");
 
 
-
+	const dispatch = useDispatch()
 	const navigate = useNavigate()
+
 	const loginUser = async (data: data) => {
 		try {
 			const res = await api.post("/users/login", data)
 
 			console.log("User logged in successfully");
-			localStorage.setItem('user', JSON.stringify(res.data.user))
-			navigate("/")
-			return res.data;
+			// localStorage.setItem('user', JSON.stringify(res.data.user))
+
+			if(res){
+				dispatch(login(data.username))
+				navigate("/")
+				return res.data;
+			}
+
+			return null;
 		}
 		catch (error) {
 			console.log("Failed to login", error)

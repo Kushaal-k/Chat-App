@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/combobox"
 import api from "./lib/userApi.ts";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 //TODO: Leave room - Done
 //TODO: Online users list - Done
@@ -22,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 //TODO: Read receipts
 //TODO: Private messages
 
-type Message = {
+export type Message = {
 	id: string
 	text: string;
 	sender: string;
@@ -39,9 +41,13 @@ function App() {
 	const [typingUser, setTypingUser] = useState<string[]>([])
 	const [users, setUsers] = useState<string[]>([]);
 
-	
+
 	const messageEndRef = useRef<HTMLDivElement>(null);
 
+	const userData = useSelector((state) => state.auth.userData)
+	const status = useSelector((state) => state.auth.status)
+
+	const navigate = useNavigate();
 
 	const joinRoom = (roomId: string) => {
 		if (!name.trim()) return;
@@ -130,16 +136,24 @@ function App() {
 	}, [messages, typingUser])
 
 	useEffect(() => {
+		if(!status){
+			navigate("/login")
+		}
+	}, [status])
+
+	useEffect(() => {
 		socket.on("connect", () => {
 			console.log("Socket is connected");
 		});
 
-		const storedData = localStorage.getItem('user')
+		// const storedData = localStorage.getItem('user')
 
-		if (storedData) {
-			const user = JSON.parse(storedData);
-			setName((user.username as string))
-		}
+		// if (storedData) {
+		// 	const user = JSON.parse(storedData);
+		// 	setName((user.username as string))
+		// }
+		if(userData)
+			setName(userData)
 
 		socket.on("room-users", (onlineUser: string[]) => {
 			setOnlineUser(onlineUser)
@@ -177,7 +191,7 @@ function App() {
 			socket.off("room-users")
 			socket.off("typing-user")
 		}
-	}, []);
+	}, [userData]);
 
 	return (
 		<>
