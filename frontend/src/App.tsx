@@ -1,6 +1,6 @@
 import MessageInput from "./components/MessageInput";
 import { useEffect, useState, useRef } from "react";
-import { socket } from "./socket.ts";
+import { socket } from "./hooks/useSocket.ts";
 import { Button } from "./components/ui/button.tsx";
 import { Separator } from "./components/ui/separator.tsx";
 import { Clock, CheckCheck, X } from "lucide-react";
@@ -16,7 +16,7 @@ import api from "./lib/userApi.ts";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-
+import type { Message } from "./hooks/useChat.ts";
 //TODO: Leave room - Done
 //TODO: Online users list - Done
 //TODO: Typing indicator - Done
@@ -24,13 +24,7 @@ import { useNavigate } from "react-router-dom";
 //TODO: Read receipts
 //TODO: Private messages
 
-export type Message = {
-	id: string
-	text: string;
-	sender: string;
-	time: string;
-	status: "Pending" | 'Sent' | 'Failed';
-};
+
 
 function App() {
 	const [messages, setMessages] = useState<Message[]>([]);

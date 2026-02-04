@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from "react";
-import type { Message } from "@/App";
+import type { Message } from "@/hooks/useChat";
 
 interface useAutoScrollPorps {
     messages: Message[],
