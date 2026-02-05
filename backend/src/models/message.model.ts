@@ -14,7 +14,7 @@ const messageSchema = new Schema(
       required: true,
     },
 
-    chatRoom: {
+    roomId: {
       type: Schema.Types.ObjectId,
       ref: "Room",
       required: true,
@@ -29,4 +29,4 @@ const messageSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("Message", messageSchema);
+export const Message = model("Message", messageSchema);

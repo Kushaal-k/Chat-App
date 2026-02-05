@@ -73,4 +73,4 @@ userSchema.methods.generateRefreshToken = function () {
     )
 }
 
-export default model("User", userSchema);
+export const User = model("User", userSchema);

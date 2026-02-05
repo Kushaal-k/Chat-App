@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
 
-const chatSchema = new Schema(
+const roomSchema = new Schema(
   {
     chatType: {
       type: String,
@@ -24,4 +24,4 @@ const chatSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("Chat", chatSchema);
+export const Room =  model("Room", roomSchema);

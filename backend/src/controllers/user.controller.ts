@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { User } from "../models/user.models.js";
+import { User } from "../models/user.model.js";
 
 const registerUser = async (req: Request, res: Response) => {
 	const { username, password } = req.body;
