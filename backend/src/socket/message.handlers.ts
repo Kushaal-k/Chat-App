@@ -5,7 +5,7 @@ export const registerMessageHandlers = (
     io: Server,
     socket: Socket
 ) => {
-    socket.on("room-message", async (
+    socket.on("room-messages", async (
         payload: {
             roomId: string;
             sender: string;
@@ -26,7 +26,7 @@ export const registerMessageHandlers = (
                 text
             });
 
-            io.to(roomId).emit("room-message", message)
+            io.to(roomId).emit("room-messages", message)
 
             callback({ok: true})
         } catch (error) {

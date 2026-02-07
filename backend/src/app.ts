@@ -18,9 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 
 connectDB()
 .then(() => {
-    httpServer.listen(process.env.PORT || 8000), () => {
+    httpServer.listen(process.env.PORT || 8000, () => {
         console.log(`Server is running at port : ${process.env.PORT}`);
-    }
+    })
 })
 .catch((err) => {
     console.log("MONOGODB Connection Failed!!", err);

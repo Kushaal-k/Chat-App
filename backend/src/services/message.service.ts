@@ -79,7 +79,7 @@ const createMessage = async ({
         roomId,
         sender,
         content: text,
-        status: "Sent"
+        status: "sent"
     });
 
     return message; 

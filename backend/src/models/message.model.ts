@@ -22,11 +22,13 @@ const messageSchema = new Schema(
 
     status: {
       type: String,
-      enum: ["sent", "delivered", "seen"],
-      default: "sent",
+      enum: ["sent", "delivered", "failed"],
+      default: "failed",
     },
   },
   { timestamps: true }
 );
+
+messageSchema.index({ roomId: 1, _id: -1 });
 
 export const Message = model("Message", messageSchema);
