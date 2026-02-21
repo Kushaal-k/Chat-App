@@ -23,7 +23,7 @@ const registerUser = async (req: Request, res: Response) => {
 	}
 
 	const user = await User.create({
-		username: username.toLowerCase(),
+		username,
 		password,
 	});
 
@@ -47,7 +47,7 @@ const loginUser = async (req: Request, res: Response) => {
 		return;
 	}
 
-	if (user?.password !== password) {
+	if (!(await user.comparePassword(password))) {
 		res.status(401).json({ message: "User credentials invalid!!" });
 		return;
 	}

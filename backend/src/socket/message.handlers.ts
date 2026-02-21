@@ -1,36 +1,43 @@
-import {Server, Socket} from "socket.io"
+import { Server, Socket } from "socket.io"
 import { createMessage } from "../services/message.service.js";
+
+type MessagePayload = {
+    roomId: string;
+    msg: {
+        id: string;
+        text: string;
+        sender: string;
+        time: string;
+        status: string;
+    }
+}
 
 export const registerMessageHandlers = (
     io: Server,
     socket: Socket
 ) => {
     socket.on("room-messages", async (
-        payload: {
-            roomId: string;
-            sender: string;
-            text: string;
-        },
-        callback: (response: {ok: boolean}) => void
+        payload: MessagePayload,
+        callback: (response: { ok: boolean }) => void
     ) => {
         try {
-            const { roomId, sender, text } = payload;
+            const { roomId, msg } = payload;
 
-            if(!socket.rooms.has(roomId)){
-                return callback({ok: false})
+            if (!socket.rooms.has(roomId)) {
+                return callback({ ok: false })
             }
 
             const message = await createMessage({
                 roomId,
-                sender,
-                text
+                sender: msg.sender,
+                text: msg.text
             });
 
-            io.to(roomId).emit("room-messages", message)
+            socket.to(roomId).emit("room-messages", message)
 
-            callback({ok: true})
+            callback({ ok: true })
         } catch (error) {
-            callback({ok: false})
+            callback({ ok: false })
         }
     })
 }       

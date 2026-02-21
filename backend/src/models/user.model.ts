@@ -1,7 +1,21 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, type Model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from "../utils/env.js"
+
+interface IUser {
+    username: string;
+    password: string;
+    refreshToken?: string | null;
+}
+
+interface IUserMethods {
+    comparePassword(enteredPassword: string): Promise<boolean>;
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
+}
+
+type UserModel = Model<IUser, {}, IUserMethods>;
 
 const userSchema = new Schema(
     {
@@ -13,18 +27,9 @@ const userSchema = new Schema(
             index: true,
             unique: true
         },
-        email: {
-            type: String,
-            required: true,
-            unique: true
-        },
         password: {
             type: String,
             required: true
-        },
-        avatar: {
-            type: String, // Link from cloudinary
-            required: true,
         },
         refreshToken: {
             type: String
@@ -35,12 +40,11 @@ const userSchema = new Schema(
     },
 );
 
-userSchema.pre("save", async function (next: any) {
+userSchema.pre("save", async function () {
     if (!this.isModified("password")) {
-        return next();
+        return;
     }
     this.password = await bcrypt.hash(this.password, 10);
-    next();
 });
 
 userSchema.methods.comparePassword = async function (enteredPassword: string) {
@@ -73,4 +77,4 @@ userSchema.methods.generateRefreshToken = function () {
     )
 }
 
-export const User = model("User", userSchema);
+export const User = model<IUser, UserModel>("User", userSchema);

@@ -9,14 +9,12 @@ const messageSchema = new Schema(
     },
 
     sender: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
 
     roomId: {
-      type: Schema.Types.ObjectId,
-      ref: "Room",
+      type: String,
       required: true,
     },
 

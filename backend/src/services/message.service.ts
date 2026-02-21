@@ -24,7 +24,18 @@
 
 
 import mongoose from "mongoose";
-import {Message} from "../models/message.model.js";
+import { Message } from "../models/message.model.js";
+
+// Maps a MongoDB message document to the shape the frontend expects
+const toClientMessage = (doc: any) => ({
+    id: doc._id.toString(),
+    text: doc.content,
+    sender: doc.sender,
+    time: doc.createdAt?.toISOString?.() ?? doc.createdAt ?? "",
+    status: doc.status === "sent" ? "Sent"
+        : doc.status === "delivered" ? "Delivered"
+            : "Failed",
+});
 
 type GetRoomMessagesParams = {
     roomId: string;
@@ -32,39 +43,39 @@ type GetRoomMessagesParams = {
     limit?: number
 }
 
-const getRoomMessages = async ({ 
-    roomId, 
-    cursor = null, 
+const getRoomMessages = async ({
+    roomId,
+    cursor = null,
     limit = 40
 }: GetRoomMessagesParams) => {
     const query: any = {
-        roomId: new mongoose.Types.ObjectId(roomId)
+        roomId
     };
 
-    if(cursor){
-        query._id = { $lt: new mongoose.Types.ObjectId(cursor)};
+    if (cursor) {
+        query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
     }
 
     const messages = await Message.find(query)
-        .sort({ _id: -1})
-        .limit( limit+1 )
+        .sort({ _id: -1 })
+        .limit(limit + 1)
 
     const hasMore = messages.length > limit;
 
-    if(hasMore){
+    if (hasMore) {
         messages.pop();
     }
 
     const lastMessage = messages.at(-1);
 
     return {
-        messages,
+        messages: messages.reverse().map(toClientMessage),
         nextCursor: lastMessage ? lastMessage._id.toString() : null,
         hasMore
     }
 }
 
-type  CreateMessageParams = {
+type CreateMessageParams = {
     roomId: string;
     sender: string;
     text: string;
@@ -82,7 +93,7 @@ const createMessage = async ({
         status: "sent"
     });
 
-    return message; 
+    return toClientMessage(message);
 }
 
-export {getRoomMessages, createMessage}
+export { getRoomMessages, createMessage }

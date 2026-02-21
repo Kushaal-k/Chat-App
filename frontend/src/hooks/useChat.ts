@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { socket } from "./useSocket";
 
 export type Message = {
-	id: string;
+	id: string
 	text: string;
 	sender: string;
 	time: string;
@@ -79,7 +79,7 @@ const useChat = (username: string) => {
 		setOnlineUser([]);
 	};
 
-    const startPrivateChat = (selectedUser: string | null) => {
+	const startPrivateChat = (selectedUser: string | null) => {
 		if (!selectedUser || !username) return;
 
 		// Create a consistent room ID by sorting usernames alphabetically
@@ -89,7 +89,7 @@ const useChat = (username: string) => {
 		joinRoom(privateRoomId);
 	}
 
-    useEffect(() => {
+	useEffect(() => {
 		socket.on("connect", () => {
 			console.log("Socket is connected");
 		});
@@ -139,17 +139,17 @@ const useChat = (username: string) => {
 		}
 	}, []);
 
-    return { 
-        messages,
-        onlineUsers: onlineUser,
-        usersTyping: typingUser,
-        joinedRoomId,
-        joinRoom,
-        leaveRoom,
-        startPrivateChat,
-        typing,
-        sendMessage,
-    }
+	return {
+		messages,
+		onlineUsers: onlineUser,
+		usersTyping: typingUser,
+		joinedRoomId,
+		joinRoom,
+		leaveRoom,
+		startPrivateChat,
+		typing,
+		sendMessage,
+	}
 };
 
 export default useChat
